@@ -1,8 +1,9 @@
 import streamlit as st
 import wikipedia
+import speech_recognition as sr
 
-# 🌙 DARK MODE STYLING
-st.set_page_config(page_title="📘 Exam Helper Chatbot", layout="centered")
+# 🌙 Dark Mode UI
+st.set_page_config(page_title="📘 Exam Helper Chatbot", layout="centered", initial_sidebar_state="collapsed")
 st.markdown("""
     <style>
         body { background-color: #0e1117; color: white; }
@@ -11,40 +12,40 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🧠 TITLE & INTRO
 st.title("📘 Exam Helper Chatbot 🤖")
-st.markdown("Ask any exam-related question. Get detailed, smart answers from Wikipedia based on your question depth! 🚀")
+st.markdown("Ask any question from any subject. Get full answers from Wikipedia. 🌐")
 
-# 💬 SESSION STATE
+# 🧠 Save chat
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# ✍️ TEXT INPUT
+# ✍️ Text input
 question = st.text_input("💬 Ask your question here:")
 
-# 🔍 GET ANSWER
-if st.button("🔍 Get Answer"):
-    if question.strip():
+# 🎤 Voice input
+if st.button("🎤 Use Voice"):
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.info("🎙️ Listening... Please speak.")
         try:
-            word_count = len(question.split())
-            if word_count <= 5:
-                answer = wikipedia.summary(question, sentences=2)
-            elif word_count <= 10:
-                answer = wikipedia.summary(question, sentences=4)
-            else:
-                answer = wikipedia.summary(question, sentences=7)
-            st.session_state.chat_history.append((question, answer))
-        except wikipedia.DisambiguationError:
-            st.error("⚠️ Too many topics. Be more specific.")
-        except wikipedia.PageError:
-            st.error("❌ No Wikipedia page found. Try another keyword.")
-        except Exception as e:
-            st.error(f"🚨 Error: {e}")
+            audio = recognizer.listen(source, timeout=5)
+            question = recognizer.recognize_google(audio)
+            st.success(f"✅ You said: {question}")
+        except:
+            st.error("⚠️ Could not understand your voice. Please try again.")
 
-# 💬 SHOW CHAT HISTORY WITH COPY BOX
+# 🔍 Get Answer
+if st.button("🔍 Get Answer"):
+    if question:
+        try:
+            # 📄 Full Wikipedia page (not just summary)
+            answer = wikipedia.page(question).content
+            st.session_state.chat_history.append((question, answer[:1500]))  # Show first 1500 characters
+        except:
+            st.error("⚠️ No answer found. Try a different question.")
+
+# 💬 Show chat history
 st.markdown("---")
-for i, (q, a) in enumerate(st.session_state.chat_history):
+for q, a in st.session_state.chat_history:
     st.markdown(f"**🧑 You:** {q}")
-    st.markdown(f"**🤖 Bot:**")
-    st.text_area(f"Answer {i+1}", value=a, height=150, key=f"ta_{i}")
-    st.caption("📋 Select and copy manually (pyperclip disabled in cloud)")
+    st.markdown(f"**🤖 Bot:** {a}")
