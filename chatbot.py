@@ -1,7 +1,7 @@
 import streamlit as st
-import wikipedia
+from transformers import pipeline
 
-# 🌙 DARK MODE STYLING
+# 🌙 Dark Mode Styling
 st.set_page_config(page_title="📘 Exam Helper Chatbot", layout="centered")
 st.markdown("""
     <style>
@@ -11,29 +11,31 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🧠 CHATBOT UI TITLE
+# 🤖 Chatbot Title
 st.title("📘 Exam Helper Chatbot 🤖")
-st.markdown("Ask anything from your exam subjects. Get full answers from Wikipedia! 🌐")
+st.markdown("Ask any subject question and get full detailed answers! 🚀")
 
-# 🧠 SAVE CHAT HISTORY
+# 🧠 Save full chat history
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# ✍️ TEXT INPUT
+# 🔁 Load chatbot model only once
+if "qa_model" not in st.session_state:
+    with st.spinner("Loading AI model..."):
+        st.session_state.qa_model = pipeline("text-generation", model="google/flan-t5-large")
+
+# ✍️ User input
 question = st.text_input("💬 Ask your question here:")
 
-# 🔍 SEARCH ANSWER
+# 🔍 Get Answer button
 if st.button("🔍 Get Answer"):
     if question:
-        try:
-            # 📄 GET FULL WIKIPEDIA PAGE CONTENT (up to 1500 characters)
-            page = wikipedia.page(question)
-            answer = page.content[:1500] + "..."
+        with st.spinner("Generating answer..."):
+            response = st.session_state.qa_model(question, max_length=300, do_sample=True)
+            answer = response[0]["generated_text"]
             st.session_state.chat_history.append((question, answer))
-        except Exception as e:
-            st.error("⚠️ Couldn't find a full answer. Try rephrasing your question.")
 
-# 💬 DISPLAY CHAT HISTORY
+# 💬 Show full chat history
 st.markdown("---")
 for q, a in st.session_state.chat_history:
     st.markdown(f"**🧑 You:** {q}")
