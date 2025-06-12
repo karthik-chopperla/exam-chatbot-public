@@ -19,10 +19,9 @@ st.markdown("Ask any question from any subject. Get full answers from Wikipedia.
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Store voice input separately
+# 🎤 Voice input (store separately)
 voice_input = ""
 
-# 🎤 Voice input
 if st.button("🎤 Use Voice"):
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
@@ -44,21 +43,19 @@ final_question = voice_input if voice_input else text_input
 if st.button("🔍 Get Answer"):
     if final_question:
         try:
-            # ✅ Step 1: Search related Wikipedia titles
+            # ✅ Get the best matching title
             search_results = wikipedia.search(final_question)
             if search_results:
-                # ✅ Step 2: Load first matched page
-                page = wikipedia.page(search_results[0])
-                answer = page.content[:1500]  # Limit to first 1500 characters
-                st.session_state.chat_history.append((final_question, answer))
+                summary = wikipedia.summary(search_results[0], sentences=5)
+                st.session_state.chat_history.append((final_question, summary))
             else:
-                st.error("⚠️ Sorry, I couldn't find anything related to your question.")
+                st.error("⚠️ No results found. Try rephrasing your question.")
         except wikipedia.DisambiguationError as e:
-            st.error(f"⚠️ Your question is too broad. Try being more specific. Options: {e.options[:5]}")
+            st.error(f"⚠️ Too many results. Try being specific. Options: {e.options[:5]}")
         except Exception as e:
             st.error(f"⚠️ An error occurred: {e}")
 
-# 💬 Display chat history
+# 💬 Show chat history
 st.markdown("---")
 for q, a in st.session_state.chat_history:
     st.markdown(f"**🧑 You:** {q}")
