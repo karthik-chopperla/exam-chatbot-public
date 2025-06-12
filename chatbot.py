@@ -19,8 +19,8 @@ st.markdown("Ask any question from any subject. Get full answers from Wikipedia.
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# ✍️ User input
-question = st.text_input("💬 Ask your question here:")
+# Store voice input separately
+voice_input = ""
 
 # 🎤 Voice input
 if st.button("🎤 Use Voice"):
@@ -29,28 +29,34 @@ if st.button("🎤 Use Voice"):
         st.info("🎙️ Listening... Please speak.")
         try:
             audio = recognizer.listen(source, timeout=5)
-            question = recognizer.recognize_google(audio)
-            st.success(f"✅ You said: {question}")
+            voice_input = recognizer.recognize_google(audio)
+            st.success(f"✅ You said: {voice_input}")
         except:
             st.error("⚠️ Could not understand your voice. Try again.")
 
+# ✍️ Text input
+text_input = st.text_input("💬 Ask your question here:")
+
+# Decide final question
+final_question = voice_input if voice_input else text_input
+
 # 🔍 Get Answer
 if st.button("🔍 Get Answer"):
-    if question:
+    if final_question:
         try:
-            # ✅ Step 1: Search related titles
-            search_results = wikipedia.search(question)
+            # ✅ Step 1: Search related Wikipedia titles
+            search_results = wikipedia.search(final_question)
             if search_results:
-                # ✅ Step 2: Load first match
+                # ✅ Step 2: Load first matched page
                 page = wikipedia.page(search_results[0])
-                answer = page.content[:1500]  # Limit answer length
-                st.session_state.chat_history.append((question, answer))
+                answer = page.content[:1500]  # Limit to first 1500 characters
+                st.session_state.chat_history.append((final_question, answer))
             else:
                 st.error("⚠️ Sorry, I couldn't find anything related to your question.")
         except wikipedia.DisambiguationError as e:
             st.error(f"⚠️ Your question is too broad. Try being more specific. Options: {e.options[:5]}")
         except Exception as e:
-            st.error("⚠️ An error occurred. Try again.")
+            st.error(f"⚠️ An error occurred: {e}")
 
 # 💬 Display chat history
 st.markdown("---")
