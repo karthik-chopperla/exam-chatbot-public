@@ -1,6 +1,5 @@
 import streamlit as st
 import wikipedia
-import pyperclip  # For copy button
 
 # 🌙 DARK MODE STYLING
 st.set_page_config(page_title="📘 Exam Helper Chatbot", layout="centered")
@@ -23,31 +22,29 @@ if "chat_history" not in st.session_state:
 # ✍️ TEXT INPUT
 question = st.text_input("💬 Ask your question here:")
 
-# 🔍 WIKIPEDIA SEARCH
+# 🔍 GET ANSWER
 if st.button("🔍 Get Answer"):
     if question.strip():
         try:
-            # Adjust answer length based on question size
-            words = len(question.split())
-            if words <= 5:
+            word_count = len(question.split())
+            if word_count <= 5:
                 answer = wikipedia.summary(question, sentences=2)
-            elif words <= 10:
+            elif word_count <= 10:
                 answer = wikipedia.summary(question, sentences=4)
             else:
                 answer = wikipedia.summary(question, sentences=7)
             st.session_state.chat_history.append((question, answer))
         except wikipedia.DisambiguationError:
-            st.error("⚠️ Too many possible topics. Try being more specific.")
+            st.error("⚠️ Too many topics. Be more specific.")
         except wikipedia.PageError:
-            st.error("❌ Couldn't find a Wikipedia page for this question.")
+            st.error("❌ No Wikipedia page found. Try another keyword.")
         except Exception as e:
             st.error(f"🚨 Error: {e}")
 
-# 💬 SHOW HISTORY WITH COPY BUTTON
+# 💬 SHOW CHAT HISTORY WITH COPY BOX
 st.markdown("---")
 for i, (q, a) in enumerate(st.session_state.chat_history):
     st.markdown(f"**🧑 You:** {q}")
-    st.markdown(f"**🤖 Bot:** {a}")
-    if st.button(f"📋 Copy Answer {i+1}", key=f"copy_{i}"):
-        pyperclip.copy(a)
-        st.success("✅ Answer copied to clipboard!")
+    st.markdown(f"**🤖 Bot:**")
+    st.text_area(f"Answer {i+1}", value=a, height=150, key=f"ta_{i}")
+    st.caption("📋 Select and copy manually (pyperclip disabled in cloud)")
