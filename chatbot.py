@@ -1,70 +1,52 @@
 import streamlit as st
 import wikipedia
-from transformers import pipeline
 import speech_recognition as sr
 
-# 🎨 Dark mode styling
-st.set_page_config(page_title="📘 Exam Helper Chatbot", layout="centered", initial_sidebar_state="collapsed")
-st.markdown(
-    """
+# 🌙 DARK MODE STYLING
+st.set_page_config(page_title="📘 Exam Helper Chatbot", layout="centered")
+st.markdown("""
     <style>
-        body {
-            background-color: #0e1117;
-            color: white;
-        }
-        .stTextInput > div > div > input {
-            background-color: #262730;
-            color: white;
-        }
-        .stButton > button {
-            background-color: #1f77b4;
-            color: white;
-        }
+        body { background-color: #0e1117; color: white; }
+        .stTextInput input { background-color: #262730; color: white; }
+        .stButton > button { background-color: #1f77b4; color: white; }
     </style>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
+# 🧠 CHATBOT UI TITLE
 st.title("📘 Exam Helper Chatbot 🤖")
-st.markdown("Ask any question from your subject and get answers using Wikipedia search! 🌐")
+st.markdown("Ask anything from your exam subjects. Get full answers from Wikipedia! 🌐")
 
-@st.cache_resource
-def load_model():
-    return pipeline("question-answering")
-
-qa = load_model()
-
-# 🧠 Chat history memory
+# 🧠 SAVE CHAT HISTORY
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# ✍️ Text input
+# ✍️ TEXT INPUT
 question = st.text_input("💬 Ask your question here:")
 
-# 🎤 Voice input (works only on desktop, not Streamlit Cloud)
+# 🎤 VOICE INPUT (only works locally)
 if st.button("🎤 Use Voice"):
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
-        st.info("🎙️ Listening... Please speak your question.")
+        st.info("🎙️ Listening... Speak your question clearly.")
         try:
             audio = recognizer.listen(source, timeout=5)
             question = recognizer.recognize_google(audio)
             st.success(f"✅ You said: {question}")
         except:
-            st.error("⚠️ Could not understand your voice. Please try again.")
+            st.error("⚠️ Could not recognize your voice. Try again.")
 
-# 🔍 Answer button
+# 🔍 SEARCH ANSWER
 if st.button("🔍 Get Answer"):
     if question:
         try:
-            # 🔎 Search Wikipedia
-            context = wikipedia.summary(question, sentences=5)
-            result = qa(question=question, context=context)
-            st.session_state.chat_history.append((question, result["answer"]))
+            # 📄 GET FULL WIKIPEDIA PAGE CONTENT
+            page = wikipedia.page(question)
+            answer = page.content[:1500] + "..."  # Show first 1500 characters
+            st.session_state.chat_history.append((question, answer))
         except:
-            st.error("⚠️ Sorry, no good answer found. Try asking in a simpler way.")
+            st.error("⚠️ Couldn't find a full answer. Try rephrasing your question.")
 
-# 💬 Display chat history
+# 💬 DISPLAY CHAT HISTORY
 st.markdown("---")
 for q, a in st.session_state.chat_history:
     st.markdown(f"**🧑 You:** {q}")

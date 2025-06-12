@@ -1,5 +1,3 @@
 streamlit
-transformers
 wikipedia
-speechrecognition
-torch
+SpeechRecognition
