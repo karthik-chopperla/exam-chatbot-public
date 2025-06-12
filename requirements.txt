@@ -1,2 +1,2 @@
-streamlit
-wikipedia
+streamlit==1.45.1
+wikipedia==1.4.0
