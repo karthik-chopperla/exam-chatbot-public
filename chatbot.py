@@ -1,7 +1,8 @@
 import streamlit as st
-from transformers import pipeline
+import wikipedia
+import speech_recognition as sr
 
-# 🌙 Dark Mode Styling
+# 🌙 DARK MODE STYLING
 st.set_page_config(page_title="📘 Exam Helper Chatbot", layout="centered")
 st.markdown("""
     <style>
@@ -11,31 +12,43 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🤖 Chatbot Title
+# 🧠 CHATBOT UI TITLE
 st.title("📘 Exam Helper Chatbot 🤖")
-st.markdown("Ask any subject question and get full detailed answers! 🚀")
+st.markdown("Ask anything from your exam subjects. Get full answers from Wikipedia! 🌐")
 
-# 🧠 Save full chat history
+# 💬 SESSION STORAGE FOR CHAT
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# 🔁 Load chatbot model only once
-if "qa_model" not in st.session_state:
-    with st.spinner("Loading AI model..."):
-        st.session_state.qa_model = pipeline("text-generation", model="google/flan-t5-large")
-
-# ✍️ User input
+# ✍️ TEXT INPUT
 question = st.text_input("💬 Ask your question here:")
 
-# 🔍 Get Answer button
-if st.button("🔍 Get Answer"):
-    if question:
-        with st.spinner("Generating answer..."):
-            response = st.session_state.qa_model(question, max_length=300, do_sample=True)
-            answer = response[0]["generated_text"]
-            st.session_state.chat_history.append((question, answer))
+# 🎤 VOICE INPUT (optional, local use only)
+if st.button("🎤 Use Voice"):
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.info("🎙️ Listening... Speak your question clearly.")
+        try:
+            audio = recognizer.listen(source, timeout=5)
+            question = recognizer.recognize_google(audio)
+            st.success(f"✅ You said: {question}")
+        except:
+            st.error("⚠️ Could not recognize your voice. Try again.")
 
-# 💬 Show full chat history
+# 🔍 SEARCH WIKIPEDIA
+if st.button("🔍 Get Answer"):
+    if question.strip() != "":
+        try:
+            summary = wikipedia.summary(question, sentences=5)  # Shorter summary
+            st.session_state.chat_history.append((question, summary))
+        except wikipedia.DisambiguationError as e:
+            st.error("⚠️ Your question is too broad. Try being more specific.")
+        except wikipedia.PageError:
+            st.error("❌ Could not find any page. Try using different keywords.")
+        except Exception as e:
+            st.error(f"🚨 Unexpected error: {e}")
+
+# 💬 DISPLAY CHAT HISTORY
 st.markdown("---")
 for q, a in st.session_state.chat_history:
     st.markdown(f"**🧑 You:** {q}")
