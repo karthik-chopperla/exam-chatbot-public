@@ -15,11 +15,11 @@ st.markdown("""
 st.title("📘 Exam Helper Chatbot 🤖")
 st.markdown("Ask any question from any subject. Get full answers from Wikipedia. 🌐")
 
-# 🧠 Save chat
+# 🧠 Chat memory
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# ✍️ Text input
+# ✍️ User input
 question = st.text_input("💬 Ask your question here:")
 
 # 🎤 Voice input
@@ -32,19 +32,27 @@ if st.button("🎤 Use Voice"):
             question = recognizer.recognize_google(audio)
             st.success(f"✅ You said: {question}")
         except:
-            st.error("⚠️ Could not understand your voice. Please try again.")
+            st.error("⚠️ Could not understand your voice. Try again.")
 
 # 🔍 Get Answer
 if st.button("🔍 Get Answer"):
     if question:
         try:
-            # 📄 Full Wikipedia page (not just summary)
-            answer = wikipedia.page(question).content
-            st.session_state.chat_history.append((question, answer[:1500]))  # Show first 1500 characters
-        except:
-            st.error("⚠️ No answer found. Try a different question.")
+            # ✅ Step 1: Search related titles
+            search_results = wikipedia.search(question)
+            if search_results:
+                # ✅ Step 2: Load first match
+                page = wikipedia.page(search_results[0])
+                answer = page.content[:1500]  # Limit answer length
+                st.session_state.chat_history.append((question, answer))
+            else:
+                st.error("⚠️ Sorry, I couldn't find anything related to your question.")
+        except wikipedia.DisambiguationError as e:
+            st.error(f"⚠️ Your question is too broad. Try being more specific. Options: {e.options[:5]}")
+        except Exception as e:
+            st.error("⚠️ An error occurred. Try again.")
 
-# 💬 Show chat history
+# 💬 Display chat history
 st.markdown("---")
 for q, a in st.session_state.chat_history:
     st.markdown(f"**🧑 You:** {q}")
